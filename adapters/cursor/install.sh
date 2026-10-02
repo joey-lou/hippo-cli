@@ -24,7 +24,7 @@ command -v python3 >/dev/null 2>&1 || fail "python3 not found on PATH."
 
 hippo_bin="$(command -v hippo 2>/dev/null || true)"
 [ -z "$hippo_bin" ] && [ -x "$HOME/.local/bin/hippo" ] && hippo_bin="$HOME/.local/bin/hippo"
-[ -z "$hippo_bin" ] && fail "hippo not found. Install it: uv tool install --editable <repo>/core"
+[ -z "$hippo_bin" ] && fail "hippo not found. Install it with: cargo install --path <hippo-cli repo>"
 info "hippo: $hippo_bin"
 
 # --- symlink hook scripts -------------------------------------------------
