@@ -1,0 +1,6 @@
+/target
+*.db
+.index/
+**/*.local.md
+.env
+.env.*
