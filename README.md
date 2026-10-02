@@ -7,7 +7,28 @@ the Python tooling.
 
 The crate is named `hippo-cli` because `hippo` is already taken on
 [crates.io](https://crates.io/crates/hippo) and on PyPI. The binary name is
-still `hippo`. This package is not published.
+still `hippo`.
+
+## Visibility and a later crates.io release
+
+GitHub stays private until that changes on purpose. `Cargo.toml` sets
+`publish = false`, so `cargo publish` refuses to run.
+
+The later release is the crate `hippo-cli` (the name returned 404 on crates.io
+on 2026-10-01). A crates.io upload makes the packaged source public, so
+revisit GitHub visibility in the same step. Personal memories stay in the
+private data repo and are outside this package.
+
+When it is time to publish:
+
+1. Confirm `hippo-cli` is still free: `https://crates.io/api/v1/crates/hippo-cli`.
+2. Run `cargo package --list` and read the file list. Expect code, sample
+   fixtures, adapters, the license, and this readme.
+3. Remove `publish = false` and set the version you want to ship.
+4. Run `cargo publish`.
+
+After that, install with `cargo install hippo-cli`. That command installs the
+`hippo` binary.
 
 The Python repo remains the previous implementation. Cursor hooks call whatever
 `hippo` is on `PATH`. Installing this binary over that command is a separate

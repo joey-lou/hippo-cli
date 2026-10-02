@@ -6,6 +6,8 @@ description = "Hippo personal memory CLI. The command is `hippo`."
 license = "MIT"
 repository = "https://github.com/joey-lou/hippo-cli"
 readme = "README.md"
+# crates.io name is hippo-cli. Remove this when Joey asks to publish.
+publish = false
 
 [[bin]]
 name = "hippo"
