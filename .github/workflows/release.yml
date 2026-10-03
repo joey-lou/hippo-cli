@@ -1,0 +1,112 @@
+name: Release
+
+# Tag the latest main commit: v0.0.2
+# CI rewrites Cargo.toml from the tag, publishes to crates.io, and attaches binaries.
+# main stays at 0.0.0-dev. v0.0.1 is already on crates.io; do not tag it again.
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Tag must be on latest main
+        run: |
+          git fetch origin main
+          if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]; then
+            echo "Release tags must point at the current main branch tip."
+            echo "  tag:  $(git rev-parse HEAD)"
+            echo "  main: $(git rev-parse origin/main)"
+            exit 1
+          fi
+
+      - name: Validate v-tag semver
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?(\+[a-zA-Z0-9.-]+)?$ ]]; then
+            echo "Tag must be vMAJOR.MINOR.PATCH: ${{ github.ref_name }}"
+            exit 1
+          fi
+          echo "Release version: $VERSION"
+
+  build-binaries:
+    needs: validate
+    name: build (${{ matrix.label }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            label: linux-x86_64
+            asset: hippo-linux-x86_64
+          - os: macos-latest
+            label: macos-arm64
+            asset: hippo-macos-arm64
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Set crate version from tag
+        run: |
+          chmod +x scripts/set-crate-version.sh
+          ./scripts/set-crate-version.sh "${GITHUB_REF_NAME#v}"
+
+      - name: Build release binary
+        run: cargo build --release
+
+      - name: Prepare artifact
+        run: |
+          cp target/release/hippo "${{ matrix.asset }}"
+          chmod +x "${{ matrix.asset }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset }}
+          path: ${{ matrix.asset }}
+
+  release:
+    needs: build-binaries
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          generate_release_notes: true
+          files: dist/*
+
+  publish:
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Set crate version from tag
+        run: |
+          chmod +x scripts/set-crate-version.sh
+          ./scripts/set-crate-version.sh "${GITHUB_REF_NAME#v}"
+
+      - name: Publish to crates.io
+        run: cargo publish --token "${{ secrets.CARGO_REGISTRY_TOKEN }}"

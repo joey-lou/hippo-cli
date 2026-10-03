@@ -54,3 +54,13 @@ adapters/cursor/install.sh
 ```
 
 That wires hooks which call `hippo` on `PATH`. Restart Cursor after it runs.
+
+## Releasing
+
+`Cargo.toml` on `main` stays at `0.0.0-dev`. Push a tag on the latest `main` commit and [the release workflow](.github/workflows/release.yml) publishes that version and attaches binaries.
+
+```bash
+git tag v0.0.2 && git push origin v0.0.2
+```
+
+`v0.0.1` is already on crates.io. The next tag has to be a new version.
