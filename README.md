@@ -1,6 +1,9 @@
 # Hippo
 
-Personal memory. Each memory is a markdown file. `hippo` searches and edits them.
+[![Crates.io](https://img.shields.io/crates/v/hippo-cli?logo=rust)](https://crates.io/crates/hippo-cli)
+[![License: MIT](https://img.shields.io/crates/l/hippo-cli)](LICENSE)
+
+Personal memory stored as markdown. `hippo` searches and edits those files.
 
 ## Install
 
@@ -8,43 +11,41 @@ Personal memory. Each memory is a markdown file. `hippo` searches and edits them
 cargo install hippo-cli
 ```
 
-From a checkout:
+From a checkout: `cargo install --path .`
+
+## Quick start
+
+Point Hippo at a folder, save a memory, then search it.
 
 ```bash
-cargo install --path .
+mkdir -p ~/memories/memory ~/.config/hippo
+printf 'home = "%s/memories"\n' "$HOME" > ~/.config/hippo/config.toml
+
+echo "Break large functions into small, well-named units." | hippo add \
+  --title "Prefer small functions" \
+  --keywords "coding,style"
+
+hippo query "small functions"
 ```
 
-Either command installs `hippo`.
+Each memory is `<home>/memory/<category>/<id>.md`. The search index is `<home>/.index/memory.db`. Rebuild it with `hippo reindex --all` after editing files by hand.
 
-## Data home
-
-Resolution order: `--home`, then `HIPPO_HOME`, then `home` in `~/.config/hippo/config.toml`.
-
-```toml
-home = "/path/to/your-memory-repo"
-```
-
-```bash
-hippo reindex --all
-```
-
-The search index is `<home>/.index/memory.db`.
+The data folder is also resolved from `--home`, then `HIPPO_HOME`, then `home` in `~/.config/hippo/config.toml`. `--home` and `--scope` go before the subcommand.
 
 ## Commands
 
 | Command | Purpose |
 |---|---|
-| `hippo query "<text>" [--k N] [--json]` | Ranked recall. Lower score is better. |
-| `hippo add [--title --keywords --tags --category --source --reason --confidence --force --from-json] [--json]` | Create a memory. Body on stdin, or a full record via `--from-json`. |
+| `hippo query "<text>" [--k N] [--json]` | Ranked matches. A lower score is a better match. |
+| `hippo add [--title --keywords --tags --category --reason --confidence] [--json]` | Create a memory. The body is read from stdin. |
 | `hippo update <id> [...] [--json]` | Edit a memory. |
+| `hippo show <id>` / `hippo path <id>` | Print the file or its path. |
+| `hippo reindex [--all\|--changed]` | Rebuild the index from markdown. |
+| `hippo status [--json]` | Index drift, git state, and what to do next. |
+| `hippo digest [--format md\|json]` | Short summary: how many memories, and the top topics. |
 | `hippo consolidate [--apply] [--json]` | Near-duplicates and contradictions. `--apply` merges duplicates only. |
-| `hippo reindex [--all\|--changed]` | Rebuild the index. |
-| `hippo manifest [--format md\|json]` | Full catalog. |
-| `hippo digest [--format md\|json]` | Short primer: count and top topics. |
-| `hippo status [--json]` | Index drift, git state, suggested actions. |
-| `hippo show <id>` / `hippo path <id>` | Raw file or its path. |
 
-`--home` and `--scope` go before the subcommand. Exit `0` on success, `2` for a validation error or a missing memory.
+Exit `0` on success. Exit `2` when input is invalid or the memory does not exist.
 
 ## Cursor
 
@@ -52,4 +53,4 @@ The search index is `<home>/.index/memory.db`.
 adapters/cursor/install.sh
 ```
 
-The hooks call `hippo` on `PATH`. Restart Cursor after installing.
+That wires hooks which call `hippo` on `PATH`. Restart Cursor after it runs.
