@@ -87,6 +87,9 @@ jobs:
           path: dist
           merge-multiple: true
 
+      - name: Pack adapters
+        run: tar -czf dist/hippo-adapters.tar.gz adapters
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:

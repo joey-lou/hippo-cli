@@ -3,7 +3,7 @@
 [![Crates.io](https://img.shields.io/crates/v/hippo-cli?logo=rust)](https://crates.io/crates/hippo-cli)
 [![License: MIT](https://img.shields.io/crates/l/hippo-cli)](LICENSE)
 
-Personal memory stored as markdown. `hippo` searches and edits those files.
+Memory for agents. Each memory is a markdown file. An agent does not open the store itself. An adapter calls the `hippo` command: a short digest at session start, then `hippo query` when something looks relevant, and `hippo add` or `hippo update` when a fact is worth keeping.
 
 ## Install
 
@@ -47,17 +47,29 @@ The data folder is also resolved from `--home`, then `HIPPO_HOME`, then `home` i
 
 Exit `0` on success. Exit `2` when input is invalid or the memory does not exist.
 
-## Cursor
+## Adapters
+
+An agent needs an adapter. This repo includes two.
+
+**Cursor.** Hooks inject the digest, recall and save go through `hippo`, and memory edits are committed in the data repo.
 
 ```bash
 adapters/cursor/install.sh
 ```
 
-That wires hooks which call `hippo` on `PATH`. Restart Cursor after it runs.
+Restart Cursor after that.
+
+**Pi.** A skill plus a session extension. The extension injects the digest. Recall and save still go through `hippo`. Ships in the repo, and the next tagged release attaches `hippo-adapters.tar.gz`.
+
+```bash
+adapters/pi/install.sh
+```
+
+The command list and exit codes are in [ADAPTER.md](ADAPTER.md).
 
 ## Releasing
 
-`Cargo.toml` on `main` stays at `0.0.0-dev`. Push a tag on the latest `main` commit and [the release workflow](.github/workflows/release.yml) publishes that version and attaches binaries.
+`Cargo.toml` on `main` stays at `0.0.0-dev`. Push a tag on the latest `main` commit and [the release workflow](.github/workflows/release.yml) publishes that version and attaches binaries plus `hippo-adapters.tar.gz`.
 
 ```bash
 git tag v0.0.2 && git push origin v0.0.2
