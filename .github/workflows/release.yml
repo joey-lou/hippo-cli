@@ -1,8 +1,8 @@
 name: Release
 
-# Tag the latest main commit: v0.0.2
+# Tag the latest main commit, for example v0.0.3.
 # CI rewrites Cargo.toml from the tag, publishes to crates.io, and attaches binaries.
-# main stays at 0.0.0-dev. v0.0.1 is already on crates.io; do not tag it again.
+# main stays at 0.0.0-dev. v0.0.1 and v0.0.2 are already on crates.io; do not tag them again.
 
 on:
   push:
