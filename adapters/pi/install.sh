@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Checkout install: links this working tree into ~/.pi/agent.
-# An installed binary uses `hippo adapter install pi` instead.
+# An installed binary uses `hippo adapter install pi`, which reads adapter.json.
 # Install the Hippo Pi adapter:
 #   - skill  ~/.pi/agent/skills/use-memory
 #   - extension  ~/.pi/agent/extensions/hippo.ts

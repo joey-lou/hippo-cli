@@ -109,6 +109,101 @@ fn unknown_adapter_exits_2() {
 }
 
 #[test]
+fn reinstall_drops_links_and_hooks_the_new_adapter_no_longer_owns() {
+    let home = temp_home();
+    let stale = home.join(".cursor/hooks/hippo-removed.sh");
+    fs::create_dir_all(stale.parent().unwrap()).unwrap();
+    std::os::unix::fs::symlink("/dev/null", &stale).unwrap();
+    let hooks_json = home.join(".cursor/hooks.json");
+    fs::write(
+        &hooks_json,
+        r#"{"version":1,"hooks":{"beforeSubmitPrompt":[{"command":"./hooks/hippo-removed.sh"}],"sessionStart":[{"command":"./hooks/herdr.sh"}]}}"#,
+    )
+    .unwrap();
+    let manifest = home.join(".config/hippo/adapters/manifest.json");
+    fs::create_dir_all(manifest.parent().unwrap()).unwrap();
+    fs::write(
+        &manifest,
+        format!(
+            r#"{{"cursor":{{"version":"0.0.0","links":["{}"],"hooks":[{{"file":"{}","event":"beforeSubmitPrompt","command":"./hooks/hippo-removed.sh"}}]}}}}"#,
+            stale.display(),
+            hooks_json.display()
+        ),
+    )
+    .unwrap();
+
+    let output = hippo(&home, &["adapter", "install", "cursor"]);
+    assert_eq!(
+        output.status.code(),
+        Some(0),
+        "stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(!stale.exists());
+    let merged: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&hooks_json).unwrap()).unwrap();
+    assert!(merged["hooks"].get("beforeSubmitPrompt").is_none());
+    assert!(merged["hooks"]["sessionStart"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|item| item["command"] == "./hooks/herdr.sh"));
+    let written: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&manifest).unwrap()).unwrap();
+    let links = written["cursor"]["links"].as_array().unwrap();
+    assert!(links.iter().all(|link| link.as_str() != Some(stale.to_str().unwrap())));
+    assert!(written["cursor"]["hooks"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .all(|hook| hook["command"] != "./hooks/hippo-removed.sh"));
+    assert!(written["cursor"]["links"].as_array().unwrap().len() >= 6);
+}
+
+#[test]
+fn manifest_keeps_other_adapters() {
+    let home = temp_home();
+    assert_eq!(hippo(&home, &["adapter", "install", "pi"]).status.code(), Some(0));
+    assert_eq!(
+        hippo(&home, &["adapter", "install", "cursor"]).status.code(),
+        Some(0)
+    );
+    let manifest = home.join(".config/hippo/adapters/manifest.json");
+    let written: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&manifest).unwrap()).unwrap();
+    assert!(written.get("pi").is_some());
+    assert!(written.get("cursor").is_some());
+    assert_eq!(
+        hippo(&home, &["adapter", "install", "cursor"]).status.code(),
+        Some(0)
+    );
+    let written: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&manifest).unwrap()).unwrap();
+    assert!(written["pi"]["links"].as_array().unwrap().len() >= 2);
+    assert!(home.join(".pi/agent/extensions/hippo.ts").exists());
+}
+
+#[test]
+fn install_refuses_a_path_owned_by_another_adapter() {
+    let home = temp_home();
+    let owned = home.join(".cursor/hooks/hippo-session-start.sh");
+    let manifest = home.join(".config/hippo/adapters/manifest.json");
+    fs::create_dir_all(manifest.parent().unwrap()).unwrap();
+    fs::write(
+        &manifest,
+        format!(
+            r#"{{"pi":{{"version":"0.0.0","links":["{}"],"hooks":[]}}}}"#,
+            owned.display()
+        ),
+    )
+    .unwrap();
+    let output = hippo(&home, &["adapter", "install", "cursor"]);
+    assert_eq!(output.status.code(), Some(2));
+    assert!(String::from_utf8(output.stderr).unwrap().contains("owned by adapter 'pi'"));
+    assert!(!owned.exists());
+}
+
+#[test]
 fn broken_hooks_json_exits_2() {
     let home = temp_home();
     let hooks_json = home.join(".cursor/hooks.json");

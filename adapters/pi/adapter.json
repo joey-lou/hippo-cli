@@ -1,0 +1,8 @@
+{
+  "root": "pi",
+  "links": [
+    {"from": "skills/use-memory", "to": "skills/use-memory"},
+    {"from": "extensions/hippo.ts", "to": "extensions/hippo.ts"}
+  ],
+  "hooks": []
+}

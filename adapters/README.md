@@ -2,6 +2,8 @@
 
 An adapter maps one coding agent onto the `hippo` command. The markdown files, the index, and the data repo stay the same for every agent. A new agent is a new directory under `adapters/`.
 
+Each directory includes `adapter.json`. It names a root (`cursor` or `pi`), the files to link, and any hook entries. `hippo adapter install` refuses a directory without one. Links and hook commands are recorded in `~/.config/hippo/adapters/manifest.json`, one object per adapter. The next install of that adapter removes the recorded links and hook entries, then writes the new list. Other adapters in the file stay put. A hook command must contain `hippo-`.
+
 Libraries can also call `MemoryStore` directly. Agents should stick to the CLI below.
 
 ## Exit codes

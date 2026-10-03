@@ -330,7 +330,7 @@ fn run_adapter(command: AdapterCommand) -> Result<()> {
     let home = home_dir()?;
     match command {
         AdapterCommand::List => {
-            for name in adapter::names() {
+            for name in adapter::names()? {
                 println!("{name}");
             }
             Ok(())

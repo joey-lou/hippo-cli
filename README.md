@@ -60,6 +60,8 @@ hippo adapter install cursor
 hippo adapter install pi
 ```
 
+Run the same command again after upgrading `hippo`. It removes the links and hook entries recorded for that adapter, then installs the copy in the new binary.
+
 **Cursor.** Hooks inject the digest, recall and save go through `hippo`, and memory edits are committed in the data repo. Restart Cursor after install.
 
 **Pi.** A skill plus a session extension. The extension injects the digest. Recall and save still go through `hippo`. Start a new Pi session after install.
@@ -71,5 +73,5 @@ From a checkout, `adapters/cursor/install.sh` and `adapters/pi/install.sh` link 
 `Cargo.toml` on `main` stays at `0.0.0-dev`. Push a tag on the latest `main` commit and [the release workflow](.github/workflows/release.yml) publishes that version and attaches binaries plus `hippo-adapters.tar.gz`.
 
 ```bash
-git tag v0.0.4 && git push origin v0.0.4
+git tag v0.0.5 && git push origin v0.0.5
 ```
