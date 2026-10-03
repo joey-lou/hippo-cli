@@ -5,10 +5,16 @@ Personal memory. Each memory is a markdown file. `hippo` searches and edits them
 ## Install
 
 ```bash
+cargo install hippo-cli
+```
+
+From a checkout:
+
+```bash
 cargo install --path .
 ```
 
-That puts `hippo` on your PATH.
+Either command installs `hippo`.
 
 ## Data home
 

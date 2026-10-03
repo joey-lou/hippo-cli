@@ -5,9 +5,10 @@ edition = "2021"
 description = "Hippo personal memory CLI. The command is `hippo`."
 license = "MIT"
 repository = "https://github.com/joey-lou/hippo-cli"
+homepage = "https://github.com/joey-lou/hippo-cli"
 readme = "README.md"
-# crates.io name is hippo-cli. Remove this when Joey asks to publish.
-publish = false
+keywords = ["memory", "markdown", "cli", "search"]
+categories = ["command-line-utilities"]
 
 [[bin]]
 name = "hippo"
