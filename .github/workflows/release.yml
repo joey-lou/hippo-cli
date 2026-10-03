@@ -112,4 +112,4 @@ jobs:
           ./scripts/set-crate-version.sh "${GITHUB_REF_NAME#v}"
 
       - name: Publish to crates.io
-        run: cargo publish --token "${{ secrets.CARGO_REGISTRY_TOKEN }}"
+        run: cargo publish --allow-dirty --token "${{ secrets.CARGO_REGISTRY_TOKEN }}"
