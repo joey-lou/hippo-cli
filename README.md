@@ -71,5 +71,5 @@ From a checkout, `adapters/cursor/install.sh` and `adapters/pi/install.sh` link 
 `Cargo.toml` on `main` stays at `0.0.0-dev`. Push a tag on the latest `main` commit and [the release workflow](.github/workflows/release.yml) publishes that version and attaches binaries plus `hippo-adapters.tar.gz`.
 
 ```bash
-git tag v0.0.3 && git push origin v0.0.3
+git tag v0.0.4 && git push origin v0.0.4
 ```
