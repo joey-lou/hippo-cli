@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Pi harness command. Talks to Hippo only through the CLI (see ADAPTER.md).
+# Pi harness command. Talks to Hippo only through the CLI (see adapters/README.md).
 # A live harness may ignore failures (fail-open). This script exits with
 # hippo's status so the contract is testable. Does not source the shell rc.
 

@@ -1,3 +1,4 @@
+pub mod adapter;
 pub mod api;
 pub mod capture;
 pub mod cli;

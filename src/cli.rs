@@ -5,6 +5,7 @@ use clap::{Parser, Subcommand};
 use serde::Serialize;
 use serde_json::json;
 
+use crate::adapter;
 use crate::api::MemoryStore;
 use crate::config::GLOBAL_SCOPE;
 use crate::error::{HippoError, Result};
@@ -116,12 +117,38 @@ enum Command {
     Show { memory_id: String },
     /// Print a memory's file path.
     Path { memory_id: String },
+    /// Install an adapter shipped inside this binary.
+    Adapter {
+        #[command(subcommand)]
+        command: AdapterCommand,
+    },
+}
+
+#[derive(Subcommand)]
+enum AdapterCommand {
+    /// List adapters shipped with this binary.
+    List,
+    /// Write an adapter into the agent config and link it.
+    Install { name: String },
 }
 
 pub fn run() -> Result<()> {
-    let cli = Cli::parse();
-    let mut store = MemoryStore::new(cli.home.as_deref(), cli.scope.as_deref())?;
-    match cli.command {
+    let Cli {
+        home,
+        scope,
+        command,
+    } = Cli::parse();
+    let command = match command {
+        Command::Adapter { command } => return run_adapter(command),
+        other => other,
+    };
+    let mut store = MemoryStore::new(home.as_deref(), scope.as_deref())?;
+    match command {
+        Command::Adapter { .. } => {
+            return Err(HippoError::Unexpected(
+                "adapter command reached the store".into(),
+            ))
+        }
         Command::Query { text, k, json } => {
             let hits = store.query(&text, k)?;
             if json {
@@ -297,6 +324,26 @@ pub fn run() -> Result<()> {
         Command::Path { memory_id } => println!("{}", store.path(&memory_id)?.display()),
     }
     Ok(())
+}
+
+fn run_adapter(command: AdapterCommand) -> Result<()> {
+    let home = home_dir()?;
+    match command {
+        AdapterCommand::List => {
+            for name in adapter::names() {
+                println!("{name}");
+            }
+            Ok(())
+        }
+        AdapterCommand::Install { name } => adapter::install(&name, &home),
+    }
+}
+
+fn home_dir() -> Result<PathBuf> {
+    std::env::var_os("HOME")
+        .map(PathBuf::from)
+        .filter(|path| !path.as_os_str().is_empty())
+        .ok_or_else(|| HippoError::Config("HOME is not set.".into()))
 }
 
 fn emit_write(

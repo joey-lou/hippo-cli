@@ -1,13 +1,13 @@
 # Pi adapter
 
 Pi loads this adapter as a skill and a session extension. Both call the `hippo`
-command. JSON shapes and exit codes are in [`ADAPTER.md`](../../ADAPTER.md).
+command. JSON shapes and exit codes are in [`adapters/README.md`](../README.md).
 
 ```bash
-adapters/pi/install.sh
+hippo adapter install pi
 ```
 
-That links:
+From a checkout, `install.sh` links this working tree instead. Either way you get:
 
 - `~/.pi/agent/skills/use-memory` — when to recall and save
 - `~/.pi/agent/extensions/hippo.ts` — session start runs `hippo reindex --changed` and injects `hippo digest`

@@ -1,8 +1,8 @@
-# Adapter / Portability Contract
+# Adapter contract
 
-Harnesses integrate with Hippo **only** through the `hippo` CLI (or by importing
-`MemoryStore`). Core, schema, store, and data repo never change per harness.
-Adding a harness = a new `adapters/<name>/` mapping its events to these commands.
+An adapter maps one coding agent onto the `hippo` command. The markdown files, the index, and the data repo stay the same for every agent. A new agent is a new directory under `adapters/`.
+
+Libraries can also call `MemoryStore` directly. Agents should stick to the CLI below.
 
 ## Exit codes
 

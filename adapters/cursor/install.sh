@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Checkout install: links this working tree into ~/.cursor.
+# An installed binary uses `hippo adapter install cursor` instead.
 # Install the Hippo Cursor adapter into ~/.cursor:
 #   - symlinks the hook scripts (live-editable from this repo)
 #   - merges hook entries into ~/.cursor/hooks.json (preserving existing hooks)

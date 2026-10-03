@@ -3,7 +3,9 @@
 [![Crates.io](https://img.shields.io/crates/v/hippo-cli?logo=rust)](https://crates.io/crates/hippo-cli)
 [![License: MIT](https://img.shields.io/crates/l/hippo-cli)](LICENSE)
 
-Memory for agents. Each memory is a markdown file. An agent does not open the store itself. An adapter calls the `hippo` command: a short digest at session start, then `hippo query` when something looks relevant, and `hippo add` or `hippo update` when a fact is worth keeping.
+There are many agent memory setups, but this one is yours to keep and see, in plain markdowns!
+
+`hippo` saves, searches, and updates that memory. Install an adapter and the agent does this during the session. You can still run the commands yourself when you want to look something up or fix a file. Or just edit the markdowns yourself.
 
 ## Install
 
@@ -34,38 +36,35 @@ The data folder is also resolved from `--home`, then `HIPPO_HOME`, then `home` i
 
 ## Commands
 
-| Command | Purpose |
-|---|---|
-| `hippo query "<text>" [--k N] [--json]` | Ranked matches. A lower score is a better match. |
-| `hippo add [--title --keywords --tags --category --reason --confidence] [--json]` | Create a memory. The body is read from stdin. |
-| `hippo update <id> [...] [--json]` | Edit a memory. |
-| `hippo show <id>` / `hippo path <id>` | Print the file or its path. |
-| `hippo reindex [--all\|--changed]` | Rebuild the index from markdown. |
-| `hippo status [--json]` | Index drift, git state, and what to do next. |
-| `hippo digest [--format md\|json]` | Short summary: how many memories, and the top topics. |
-| `hippo consolidate [--apply] [--json]` | Near-duplicates and contradictions. `--apply` merges duplicates only. |
+| Command                                                                           | Purpose                                                               |
+| --------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `hippo query "<text>" [--k N] [--json]`                                           | Ranked matches. A lower score is a better match.                      |
+| `hippo add [--title --keywords --tags --category --reason --confidence] [--json]` | Create a memory. The body is read from stdin.                         |
+| `hippo update <id> [...] [--json]`                                                | Edit a memory.                                                        |
+| `hippo show <id>` / `hippo path <id>`                                             | Print the file or its path.                                           |
+| `hippo reindex [--all\|--changed]`                                                | Rebuild the index from markdown.                                      |
+| `hippo status [--json]`                                                           | Index drift, git state, and what to do next.                          |
+| `hippo digest [--format md\|json]`                                                | Short summary: how many memories, and the top topics.                 |
+| `hippo consolidate [--apply] [--json]`                                            | Near-duplicates and contradictions. `--apply` merges duplicates only. |
 
 Exit `0` on success. Exit `2` when input is invalid or the memory does not exist.
 
 ## Adapters
 
-An agent needs an adapter. This repo includes two.
+Cursor and Pi are included. Each one calls `hippo` and leaves the markdown files alone. The command list, JSON shapes, and exit codes are in [adapters/README.md](adapters/README.md).
 
-**Cursor.** Hooks inject the digest, recall and save go through `hippo`, and memory edits are committed in the data repo.
-
-```bash
-adapters/cursor/install.sh
-```
-
-Restart Cursor after that.
-
-**Pi.** A skill plus a session extension. The extension injects the digest. Recall and save still go through `hippo`.
+They ship inside the `hippo` binary:
 
 ```bash
-adapters/pi/install.sh
+hippo adapter install cursor
+hippo adapter install pi
 ```
 
-The command list and exit codes are in [ADAPTER.md](ADAPTER.md).
+**Cursor.** Hooks inject the digest, recall and save go through `hippo`, and memory edits are committed in the data repo. Restart Cursor after install.
+
+**Pi.** A skill plus a session extension. The extension injects the digest. Recall and save still go through `hippo`. Start a new Pi session after install.
+
+From a checkout, `adapters/cursor/install.sh` and `adapters/pi/install.sh` link that working tree instead.
 
 ## Releasing
 
