@@ -59,7 +59,7 @@ adapters/cursor/install.sh
 
 Restart Cursor after that.
 
-**Pi.** A skill plus a session extension. The extension injects the digest. Recall and save still go through `hippo`. Ships in the repo, and the next tagged release attaches `hippo-adapters.tar.gz`.
+**Pi.** A skill plus a session extension. The extension injects the digest. Recall and save still go through `hippo`.
 
 ```bash
 adapters/pi/install.sh
