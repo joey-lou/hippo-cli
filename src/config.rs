@@ -1,3 +1,4 @@
+use std::fs;
 use std::path::{Path, PathBuf};
 
 use crate::error::{HippoError, Result};
@@ -21,12 +22,21 @@ pub fn resolve_home(explicit: Option<&Path>) -> Result<PathBuf> {
         )));
     };
     let home = expand_user(candidate);
-    if !home.is_dir() {
+    if home.is_dir() {
+        return Ok(home);
+    }
+    if home.exists() {
         return Err(HippoError::Config(format!(
-            "Data home does not exist: {}",
+            "Data home is not a directory: {}",
             home.display()
         )));
     }
+    fs::create_dir_all(&home).map_err(|err| {
+        HippoError::Config(format!(
+            "Could not create data home {}: {err}",
+            home.display()
+        ))
+    })?;
     Ok(home)
 }
 

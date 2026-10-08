@@ -1,40 +1,38 @@
-# Hippo
+# Hippo 🦛
 
 [![Crates.io](https://img.shields.io/crates/v/hippo-cli?logo=rust)](https://crates.io/crates/hippo-cli)
 [![License: MIT](https://img.shields.io/crates/l/hippo-cli)](LICENSE)
 
-There are many agent memory setups, but this one is yours to keep and see, in plain markdowns!
+Hippo, a CLI to build your hippo campus! 🦛🦛🦛
 
-`hippo` saves, searches, and updates that memory. Install an adapter and the agent does this during the session. You can still run the commands yourself when you want to look something up or fix a file. Or just edit the markdowns yourself.
+There are many agent memory setups, but this one is yours to keep and see, in plain markdown.
 
-## Install
+You can read, modify and even git track your memory files easily in one place. Agents handle the hard work of adding new entries, synthesizing notes, and keeping everything fresh.
 
-```bash
-cargo install hippo-cli
-```
-
-From a checkout: `cargo install --path .`
+The CLI is built in rust, install with cargo and add the adapter for the harness you use, then you are good to go.
 
 ## Quick start
 
-Point Hippo at a folder, save a memory, then search it.
-
 ```bash
-mkdir -p ~/memories/memory ~/.config/hippo
-printf 'home = "%s/memories"\n' "$HOME" > ~/.config/hippo/config.toml
-
-echo "Break large functions into small, well-named units." | hippo add \
-  --title "Prefer small functions" \
-  --keywords "coding,style"
-
-hippo query "small functions"
+cargo install hippo-cli
+hippo adapter install cursor
 ```
 
-Each memory is `<home>/memory/<category>/<id>.md`. The search index is `<home>/.index/memory.db`. Rebuild it with `hippo reindex --all` after editing files by hand.
+Restart Cursor after that. For Pi, run `hippo adapter install pi` and start a new session.
 
-The data folder is also resolved from `--home`, then `HIPPO_HOME`, then `home` in `~/.config/hippo/config.toml`. `--home` and `--scope` go before the subcommand.
+After you upgrade Hippo, run the install command again so the plugin matches the new binary.
+
+Memories go in a folder you choose. Set it in `~/.config/hippo/config.toml`:
+
+```toml
+home = "~/memories"
+```
+
+`HIPPO_HOME` points at the same folder. Hippo creates it if it is missing. Each memory is a markdown file under `<home>/memory/`.
 
 ## Commands
+
+Agents use these. JSON shapes and the rest of the contract are in [adapters/README.md](adapters/README.md).
 
 | Command                                                                           | Purpose                                                               |
 | --------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
@@ -47,31 +45,16 @@ The data folder is also resolved from `--home`, then `HIPPO_HOME`, then `home` i
 | `hippo digest [--format md\|json]`                                                | Short summary: how many memories, and the top topics.                 |
 | `hippo consolidate [--apply] [--json]`                                            | Near-duplicates and contradictions. `--apply` merges duplicates only. |
 
-Exit `0` on success. Exit `2` when input is invalid or the memory does not exist.
+Exit `0` on success. Exit `2` when the input is invalid or the memory does not exist.
 
-## Adapters
+`--home` sets the folder for one command. Otherwise Hippo uses `HIPPO_HOME`, then `home` in `~/.config/hippo/config.toml`.
 
-Cursor and Pi are included. Each one calls `hippo` and leaves the markdown files alone. The command list, JSON shapes, and exit codes are in [adapters/README.md](adapters/README.md).
-
-They ship inside the `hippo` binary:
-
-```bash
-hippo adapter install cursor
-hippo adapter install pi
-```
-
-Run the same command again after upgrading `hippo`. It removes the links and hook entries recorded for that adapter, then installs the copy in the new binary.
-
-**Cursor.** Hooks inject the digest, recall and save go through `hippo`, and memory edits are committed in the data repo. Restart Cursor after install.
-
-**Pi.** A skill plus a session extension. The extension injects the digest. Recall and save still go through `hippo`. Start a new Pi session after install.
-
-From a checkout, `adapters/cursor/install.sh` and `adapters/pi/install.sh` link that working tree instead.
+From a checkout of this repo, `cargo install --path .` installs that build. `adapters/cursor/install.sh` and `adapters/pi/install.sh` link the working tree instead of the copy shipped in the binary.
 
 ## Releasing
 
 `Cargo.toml` on `main` stays at `0.0.0-dev`. Push a tag on the latest `main` commit and [the release workflow](.github/workflows/release.yml) publishes that version and attaches binaries plus `hippo-adapters.tar.gz`.
 
 ```bash
-git tag v0.0.5 && git push origin v0.0.5
+git tag v0.0.6 && git push origin v0.0.6
 ```

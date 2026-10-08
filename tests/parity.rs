@@ -240,8 +240,12 @@ fn config_resolution() {
     let home = fresh_home(false);
     assert_eq!(config::resolve_home(Some(&home)).unwrap(), home);
     let missing = home.join("absent");
+    assert_eq!(config::resolve_home(Some(&missing)).unwrap(), missing);
+    assert!(missing.is_dir());
+    let file_home = home.join("a-file");
+    fs::write(&file_home, "x").unwrap();
     assert!(matches!(
-        config::resolve_home(Some(&missing)),
+        config::resolve_home(Some(&file_home)),
         Err(HippoError::Config(_))
     ));
 

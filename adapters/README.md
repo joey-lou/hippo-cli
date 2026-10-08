@@ -109,4 +109,4 @@ Active scope: `--scope` → `HIPPO_SCOPE` → `.hippo/scope` marker → `global`
 
 ## Data home resolution
 
-`--home` → `HIPPO_HOME` → `~/.config/hippo/config.toml` (`home = "..."`).
+`--home` → `HIPPO_HOME` → `~/.config/hippo/config.toml` (`home = "..."`). Hippo creates that directory when it is missing. A path that already exists and is not a directory is an error.
