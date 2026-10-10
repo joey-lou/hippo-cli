@@ -73,10 +73,11 @@ fn install_cursor_links_files_and_keeps_other_hooks() {
         commands,
         vec!["./hooks/herdr.sh", "./hooks/hippo-session-start.sh"]
     );
-    assert!(merged["hooks"]["afterShellExecution"][0]["matcher"]
-        .as_str()
-        .unwrap()
-        .contains("consolidate"));
+    assert!(merged["hooks"].get("afterShellExecution").is_none());
+    assert_eq!(
+        merged["hooks"]["afterFileEdit"][0]["command"],
+        "./hooks/hippo-after-file-edit.sh"
+    );
 
     let again = hippo(&home, &["adapter", "install", "cursor"]);
     assert_eq!(again.status.code(), Some(0));
@@ -157,7 +158,7 @@ fn reinstall_drops_links_and_hooks_the_new_adapter_no_longer_owns() {
         .unwrap()
         .iter()
         .all(|hook| hook["command"] != "./hooks/hippo-removed.sh"));
-    assert!(written["cursor"]["links"].as_array().unwrap().len() >= 6);
+    assert_eq!(written["cursor"]["links"].as_array().unwrap().len(), 4);
 }
 
 #[test]

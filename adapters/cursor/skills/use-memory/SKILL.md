@@ -22,8 +22,9 @@ assume a memory's contents from the digest — always `query` to retrieve it.
    `id, path, title, score, snippet` (lower score = better).
 2. Read only the top hit files (their `path`) before answering. Don't dump the
    whole store; recall is cheap-first.
-3. Hippo is the memory bank. Do not search `~/.cursor/projects` or other chat
-   transcripts for a past decision. If the query has no hit, it is not stored.
+3. Hippo is the memory bank. Do not search `~/.cursor/projects`, Pi sessions, or
+   other chat transcripts for a past decision. If the query has no hit, it is
+   not stored.
 
 ## Save (write)
 
@@ -52,15 +53,15 @@ signal-to-noise ratio.
 2. **Top hit is the same subject:** `hippo update <id>` and fold the new fact into
    that body. Never create a second memory for the same decision — supersede it.
    Pass `--reason` and `--confidence` the same way as `add`.
-3. **No hit on that subject:** create it. Pass `--source cursor` for provenance,
-   `--reason` (one short sentence), and `--confidence high|medium|low`:
+3. **No hit on that subject:** create it. Pass `--reason` (one short sentence)
+   and `--confidence high|medium|low`. Omit `--source`; Hippo records the
+   harness (`pi` or `cursor`) from the environment:
    ```bash
    echo "<markdown body>" | hippo add \
      --title "<concise title>" \
      --keywords "kw1,kw2,kw3" \
      --tags "cat1" \
      --category "<folder>" \
-     --source cursor \
      --reason "<one short sentence>" \
      --confidence high
    ```
@@ -93,25 +94,26 @@ saving that exact text.
 
 ## Git
 
-No hook creates a memory. `hippo add` and `hippo update` write the file. The
-`afterShellExecution` hook commits and pushes the data repo when one of those
-commands finishes. A Cursor edit of a memory markdown file is reindexed, then
-committed and pushed, by `afterFileEdit`.
+`hippo add`, `hippo update`, and `hippo consolidate --apply` commit and push the
+data repo themselves. When a write prints `warning: memory saved but not synced`,
+the memory is saved; tell the user the sync failed and why. A direct edit of a
+memory markdown file is synced by the harness adapter after the edit.
 
 Do not commit or push the memory repo yourself.
 
-The `stop` hook only checks status. It speaks up only when drift, uncommitted
-files, or unpushed commits are still left.
+An end-of-turn check speaks up only when drift, uncommitted files, or unpushed
+commits are still left.
 
 ## Commands
 
 | Command | Purpose |
 |---|---|
 | `hippo query "<text>" [--k N] [--json]` | Recall |
-| `hippo add [--title --keywords --tags --category --source --reason --confidence --force]` (body on stdin) | Create. Low confidence or secret-like text is rejected unless `--force` |
+| `hippo add [--title --keywords --tags --category --reason --confidence --force]` (body on stdin) | Create. Low confidence or secret-like text is rejected unless `--force` |
 | `hippo update <id> [--reason --confidence --force ...]` | Edit. Same capture gate as add |
 | `hippo consolidate [--apply] [--json]` | Near-duplicates and contradictions. `--apply` merges duplicates only |
 | `hippo digest [--format md\|json]` | Session primer: count + top topics |
 | `hippo manifest [--format md\|json]` | Full catalog (tooling/debug) |
 | `hippo status [--json]` | Drift + git state |
+| `hippo sync [--file PATH]` | Reindex, commit, and push. With `--file`, only for a memory file |
 | `hippo show/path <id>` | Inspect |

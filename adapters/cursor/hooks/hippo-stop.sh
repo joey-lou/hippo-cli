@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Hippo stop hook: report leftover memory-repo drift or git state.
-# The write hooks commit and push. This hook only checks. Quiet when clean.
+# Hippo writes and the afterFileEdit hook commit and push. This hook only
+# checks. Quiet when clean.
 # loop_limit=1 keeps a notice to one nudge. Fails open.
 
 cat >/dev/null 2>&1
@@ -35,7 +36,7 @@ if not (dirty or ahead or drift):
 msg = (
     "Hippo: the memory repo still has unsynced work "
     f"(drift={drift}, uncommitted={dirty}, unpushed={ahead}). "
-    "The write hooks should have committed and pushed this. "
+    "Hippo should have committed and pushed this. "
     "Tell me briefly what is left. Do not commit or push unless I ask."
 )
 print(json.dumps({"followup_message": msg}))

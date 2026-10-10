@@ -559,8 +559,8 @@ mod tests {
         assert_eq!(specs.len(), 2);
         let cursor = &specs["cursor"];
         assert_eq!(cursor.root, "cursor");
-        assert_eq!(cursor.links.len(), 6);
-        assert_eq!(cursor.hooks.len(), 4);
+        assert_eq!(cursor.links.len(), 4);
+        assert_eq!(cursor.hooks.len(), 3);
         let pi = &specs["pi"];
         assert_eq!(pi.root, "pi");
         assert_eq!(pi.links.len(), 2);

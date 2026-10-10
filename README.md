@@ -30,6 +30,8 @@ home = "~/memories"
 
 `HIPPO_HOME` points at the same folder. Hippo creates it if it is missing. Each memory is a markdown file under `<home>/memory/`.
 
+When that folder is a git repo, every write commits the memory folder and pushes it if the branch has an upstream. A failed push leaves the memory saved and prints a warning.
+
 ## Commands
 
 Agents use these. JSON shapes and the rest of the contract are in [adapters/README.md](adapters/README.md).
@@ -42,6 +44,7 @@ Agents use these. JSON shapes and the rest of the contract are in [adapters/READ
 | `hippo show <id>` / `hippo path <id>`                                             | Print the file or its path.                                           |
 | `hippo reindex [--all\|--changed]`                                                | Rebuild the index from markdown.                                      |
 | `hippo status [--json]`                                                           | Index drift, git state, and what to do next.                          |
+| `hippo sync [--file PATH]`                                                        | Reindex, then commit and push the memory folder.                      |
 | `hippo digest [--format md\|json]`                                                | Short summary: how many memories, and the top topics.                 |
 | `hippo consolidate [--apply] [--json]`                                            | Near-duplicates and contradictions. `--apply` merges duplicates only. |
 
@@ -56,5 +59,5 @@ From a checkout of this repo, `cargo install --path .` installs that build. `ada
 `Cargo.toml` on `main` stays at `0.0.0-dev`. Push a tag on the latest `main` commit and [the release workflow](.github/workflows/release.yml) publishes that version and attaches binaries plus `hippo-adapters.tar.gz`.
 
 ```bash
-git tag v0.0.6 && git push origin v0.0.6
+git tag v0.0.7 && git push origin v0.0.7
 ```

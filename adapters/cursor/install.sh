@@ -31,7 +31,8 @@ info "hippo: $hippo_bin"
 
 # --- symlink hook scripts -------------------------------------------------
 mkdir -p "$HOOKS_DIR"
-for script in hippo-session-start.sh hippo-after-file-edit.sh hippo-after-shell.sh hippo-sync-memory.sh hippo-stop.sh; do
+rm -f "$HOOKS_DIR/hippo-after-shell.sh" "$HOOKS_DIR/hippo-sync-memory.sh"
+for script in hippo-session-start.sh hippo-after-file-edit.sh hippo-stop.sh; do
   chmod +x "$ADAPTER_DIR/hooks/$script"
   ln -sfn "$ADAPTER_DIR/hooks/$script" "$HOOKS_DIR/$script"
 done
@@ -56,16 +57,18 @@ hooks = data.setdefault("hooks", {})
 OURS = {
     "sessionStart": {"command": "./hooks/hippo-session-start.sh", "timeout": 20},
     "afterFileEdit": {"command": "./hooks/hippo-after-file-edit.sh", "timeout": 30},
-    "afterShellExecution": {"command": "./hooks/hippo-after-shell.sh", "matcher": "hippo\\s+(add|update|consolidate)\\b", "timeout": 30},
     "stop": {"command": "./hooks/hippo-stop.sh", "timeout": 15, "loop_limit": 1},
 }
 
+# Drop every prior Hippo entry, including events Hippo no longer uses; keep the user's.
+for event in list(hooks):
+    kept = [e for e in hooks[event] if "hippo-" not in (e.get("command") or "")]
+    if kept:
+        hooks[event] = kept
+    else:
+        del hooks[event]
 for event, entry in OURS.items():
-    existing = hooks.get(event, [])
-    # Drop any prior Hippo entry for this event, keep the user's others.
-    existing = [e for e in existing if "hippo-" not in (e.get("command") or "")]
-    existing.append(entry)
-    hooks[event] = existing
+    hooks.setdefault(event, []).append(entry)
 
 os.makedirs(os.path.dirname(path), exist_ok=True)
 with open(path, "w") as f:

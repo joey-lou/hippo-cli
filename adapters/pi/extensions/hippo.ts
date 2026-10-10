@@ -1,12 +1,25 @@
-// Pi session adapter. Injects a short Hippo digest. Fails open.
+// Pi session adapter. Fails open: a missing hippo binary must not break the session.
 // Install: adapters/pi/install.sh
-// Recall and save stay on the `hippo` command; see skills/use-memory/SKILL.md.
+// `hippo add` and `hippo update` commit and push on their own. This adapter
+// injects the digest, syncs memory files edited with Pi's edit and write tools,
+// and checks for unsynced work once before Pi settles.
+// On cursor/* models the Cursor SDK runs Cursor's hippo hooks for edits and the
+// end-of-turn check, so this adapter leaves those turns to them.
+
+import { homedir } from "node:os";
+import { resolve } from "node:path";
+
+const FILE_TOOLS = new Set(["edit", "write"]);
 
 export default function (pi) {
+  const hippo = (args, timeout = 20000) => pi.exec("hippo", args, { timeout });
+  const cursorOwnsTurn = (ctx) => ctx.model?.provider === "cursor";
+  let nudged = false;
+
   pi.on("session_start", async () => {
     try {
-      await pi.exec("hippo", ["reindex", "--changed"], { timeout: 20000 });
-      const digest = await pi.exec("hippo", ["digest"], { timeout: 10000 });
+      await hippo(["reindex", "--changed"]);
+      const digest = await hippo(["digest"], 10000);
       const text = (digest.stdout || "").trim();
       if (!text) return;
       pi.sendMessage(
@@ -24,7 +37,45 @@ export default function (pi) {
         { triggerTurn: false, deliverAs: "nextTurn" },
       );
     } catch {
-      // A missing hippo binary must not break the session.
+      // Fail open.
     }
   });
+
+  pi.on("before_agent_start", () => {
+    nudged = false;
+  });
+
+  pi.on("tool_result", async (event, ctx) => {
+    if (event.isError || !FILE_TOOLS.has(event.toolName) || cursorOwnsTurn(ctx)) return;
+    const file = resolve(ctx.cwd, String(event.input.path).replace(/^~(?=\/|$)/, homedir()));
+    await hippo(["sync", "--file", file], 30000).catch(() => {});
+  });
+
+  pi.on("agent_before_settle", async (event, ctx) => {
+    if (nudged || event.continue || cursorOwnsTurn(ctx)) return;
+    const notice = await unsyncedNotice(hippo);
+    if (!notice) return;
+    nudged = true;
+    return {
+      entries: [{ type: "custom_message", customType: "hippo-status", content: notice, display: true }],
+      continue: true,
+    };
+  });
+}
+
+async function unsyncedNotice(hippo) {
+  try {
+    const status = JSON.parse((await hippo(["status", "--json"], 15000)).stdout);
+    const drift = status.new.length + status.changed.length + status.removed.length;
+    const { dirty, ahead } = status.git;
+    if (!drift && !dirty && !ahead) return undefined;
+    return (
+      "Hippo: the memory repo still has unsynced work " +
+      `(drift=${drift}, uncommitted=${dirty ? "True" : "False"}, unpushed=${ahead}). ` +
+      "Hippo should have committed and pushed this. " +
+      "Tell me briefly what is left. Do not commit or push unless I ask."
+    );
+  } catch {
+    return undefined;
+  }
 }

@@ -7,7 +7,7 @@ use serde_json::json;
 
 use crate::adapter;
 use crate::api::MemoryStore;
-use crate::config::GLOBAL_SCOPE;
+use crate::config::{self, GLOBAL_SCOPE};
 use crate::error::{HippoError, Result};
 use crate::hygiene::{Finding, HygieneReport, Notice};
 use crate::store::{MemoryPatch, NewMemory, DEFAULT_CATEGORY};
@@ -108,6 +108,12 @@ enum Command {
         #[arg(long)]
         json: bool,
     },
+    /// Reindex, then commit and push memory changes in the data repo.
+    Sync {
+        /// Only sync when this file is inside the memory folder.
+        #[arg(long)]
+        file: Option<PathBuf>,
+    },
     /// Report index drift, git state, and suggested actions.
     Status {
         #[arg(long)]
@@ -179,7 +185,8 @@ pub fn run() -> Result<()> {
             body,
             json,
         } => {
-            let draft = if from_json {
+            let _lock = store.lock_writes()?;
+            let mut draft = if from_json {
                 draft_from_json(&read_stdin()?)?
             } else {
                 NewMemory {
@@ -195,13 +202,14 @@ pub fn run() -> Result<()> {
                     confidence,
                 }
             };
+            draft.source = config::resolve_source(draft.source);
             let memory = store.add(draft, force)?;
             let notices = store.review(&memory)?;
             emit_write(
                 &memory.id,
                 &memory.path.display().to_string(),
                 &notices,
-                &store.capture_warnings,
+                &write_warnings(&store),
                 json,
             )?;
         }
@@ -217,6 +225,7 @@ pub fn run() -> Result<()> {
             force,
             json,
         } => {
+            let _lock = store.lock_writes()?;
             let patch = MemoryPatch {
                 title,
                 keywords: keywords.map(|value| split_csv(Some(&value))),
@@ -232,7 +241,7 @@ pub fn run() -> Result<()> {
                 &memory.id,
                 &memory.path.display().to_string(),
                 &notices,
-                &store.capture_warnings,
+                &write_warnings(&store),
                 json,
             )?;
         }
@@ -249,14 +258,25 @@ pub fn run() -> Result<()> {
         Command::Manifest { format } => println!("{}", store.manifest(format == "json")?),
         Command::Digest { format } => println!("{}", store.digest(format == "json")?),
         Command::Consolidate { apply, json } => {
+            let _lock = if apply {
+                Some(store.lock_writes()?)
+            } else {
+                None
+            };
             let report = store.consolidate(apply)?;
+            let warnings = if apply {
+                sync_warning(&store).into_iter().collect()
+            } else {
+                Vec::new()
+            };
             if json {
                 println!(
                     "{}",
-                    serde_json::to_string_pretty(&report_payload(&report))
+                    serde_json::to_string_pretty(&report_payload(&report, warnings))
                         .map_err(HippoError::unexpected)?
                 );
             } else {
+                print_warnings(&warnings)?;
                 println!(
                     "duplicates={} contradictions={}",
                     report.duplicates.len(),
@@ -292,6 +312,15 @@ pub fn run() -> Result<()> {
                     println!("applied removed={removed}");
                 }
             }
+        }
+        Command::Sync { file } => {
+            if let Some(file) = file.filter(|file| !store.is_memory_file(file)) {
+                println!("skipped: {} is not a memory file", file.display());
+                return Ok(());
+            }
+            let _lock = store.lock_writes()?;
+            let report = store.sync()?;
+            println!("committed={} pushed={}", report.committed, report.pushed);
         }
         Command::Status { json } => {
             let report = store.status()?;
@@ -378,10 +407,30 @@ fn emit_write(
         )
         .map_err(HippoError::unexpected)?;
     }
+    drop(stderr);
+    print_warnings(warnings)
+}
+
+fn print_warnings(warnings: &[String]) -> Result<()> {
+    let mut stderr = io::stderr().lock();
     for warning in warnings {
         writeln!(stderr, "warning: {warning}").map_err(HippoError::unexpected)?;
     }
     Ok(())
+}
+
+fn write_warnings(store: &MemoryStore) -> Vec<String> {
+    let mut warnings = store.capture_warnings.clone();
+    warnings.extend(sync_warning(store));
+    warnings
+}
+
+/// The write already landed, so a failed sync is a warning, not an error.
+fn sync_warning(store: &MemoryStore) -> Option<String> {
+    store
+        .sync()
+        .err()
+        .map(|err| format!("memory saved but not synced: {err}"))
 }
 
 #[derive(Serialize)]
@@ -408,6 +457,8 @@ struct ReportJson {
     contradictions: Vec<ContradictionJson>,
     applied: bool,
     removed: Vec<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    warnings: Vec<String>,
 }
 
 #[derive(Serialize)]
@@ -424,7 +475,7 @@ struct ContradictionJson {
     tokens: Vec<String>,
 }
 
-fn report_payload(report: &HygieneReport) -> ReportJson {
+fn report_payload(report: &HygieneReport, warnings: Vec<String>) -> ReportJson {
     ReportJson {
         duplicates: report
             .duplicates
@@ -446,6 +497,7 @@ fn report_payload(report: &HygieneReport) -> ReportJson {
             .collect(),
         applied: report.applied,
         removed: report.removed.clone(),
+        warnings,
     }
 }
 

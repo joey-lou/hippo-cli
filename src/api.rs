@@ -1,18 +1,21 @@
 use std::collections::HashMap;
+use std::fs::{self, File};
 use std::path::{Path, PathBuf};
 
 use serde::Serialize;
 
 use crate::capture::{self, Assessment};
 use crate::config::{self, GLOBAL_SCOPE};
-use crate::error::Result;
+use crate::error::{HippoError, Result};
 use crate::hygiene::{self, Cluster, HygieneReport, Notice};
 use crate::index::{self, ReindexResult};
 use crate::ranking;
 use crate::render;
 use crate::search::{self, Hit};
 use crate::store::{self, Memory, MemoryPatch, NewMemory};
-use crate::vcs::{self, GitStatus};
+use crate::vcs::{self, GitStatus, SyncReport};
+
+const WRITE_LOCK: &str = "write.lock";
 
 #[derive(Debug, Serialize)]
 pub struct StatusReport {
@@ -135,6 +138,34 @@ impl MemoryStore {
 
     pub fn path(&self, memory_id: &str) -> Result<PathBuf> {
         store::find_path(&self.home, memory_id)
+    }
+
+    /// Held for a whole write so parallel agents queue instead of colliding on git.
+    pub fn lock_writes(&self) -> Result<File> {
+        let path = index::db_path(&self.home).with_file_name(WRITE_LOCK);
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent).map_err(HippoError::unexpected)?;
+        }
+        let file = File::create(path).map_err(HippoError::unexpected)?;
+        file.lock().map_err(HippoError::unexpected)?;
+        Ok(file)
+    }
+
+    /// Reindex hand edits, then commit and push the memory folder.
+    pub fn sync(&self) -> Result<SyncReport> {
+        self.reindex(true)?;
+        vcs::sync(&self.home, &store::memory_dir(&self.home))
+    }
+
+    pub fn is_memory_file(&self, path: &Path) -> bool {
+        let memory_dir = store::memory_dir(&self.home);
+        let resolve = |path: &Path| {
+            path.canonicalize()
+                .or_else(|_| std::path::absolute(path))
+                .unwrap_or_else(|_| path.to_path_buf())
+        };
+        path.extension().is_some_and(|ext| ext == "md")
+            && resolve(path).starts_with(resolve(&memory_dir))
     }
 
     pub fn reindex(&self, changed_only: bool) -> Result<ReindexResult> {

@@ -7,9 +7,6 @@
     "afterFileEdit": [
       { "command": "./hooks/hippo-after-file-edit.sh", "timeout": 30 }
     ],
-    "afterShellExecution": [
-      { "command": "./hooks/hippo-after-shell.sh", "matcher": "hippo\\s+(add|update)\\b", "timeout": 30 }
-    ],
     "stop": [
       { "command": "./hooks/hippo-stop.sh", "timeout": 15, "loop_limit": 1 }
     ]

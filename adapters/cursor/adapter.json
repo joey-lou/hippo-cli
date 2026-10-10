@@ -3,8 +3,6 @@
   "links": [
     {"from": "hooks/hippo-session-start.sh", "to": "hooks/hippo-session-start.sh"},
     {"from": "hooks/hippo-after-file-edit.sh", "to": "hooks/hippo-after-file-edit.sh"},
-    {"from": "hooks/hippo-after-shell.sh", "to": "hooks/hippo-after-shell.sh"},
-    {"from": "hooks/hippo-sync-memory.sh", "to": "hooks/hippo-sync-memory.sh"},
     {"from": "hooks/hippo-stop.sh", "to": "hooks/hippo-stop.sh"},
     {"from": "skills/use-memory", "to": "skills/use-memory"}
   ],
@@ -18,15 +16,6 @@
       "file": "hooks.json",
       "event": "afterFileEdit",
       "entry": {"command": "./hooks/hippo-after-file-edit.sh", "timeout": 30}
-    },
-    {
-      "file": "hooks.json",
-      "event": "afterShellExecution",
-      "entry": {
-        "command": "./hooks/hippo-after-shell.sh",
-        "matcher": "hippo\\s+(add|update|consolidate)\\b",
-        "timeout": 30
-      }
     },
     {
       "file": "hooks.json",

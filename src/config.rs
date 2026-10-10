@@ -50,6 +50,18 @@ pub fn resolve_scope(explicit: Option<&str>, start: Option<&Path>) -> String {
         .unwrap_or_else(|| GLOBAL_SCOPE.to_string())
 }
 
+/// Harness that made a write: `--source`, then `HIPPO_SOURCE`, then the agent environment.
+pub fn resolve_source(explicit: Option<String>) -> Option<String> {
+    let env_set = |name: &str| std::env::var(name).is_ok_and(|value| !value.is_empty());
+    explicit
+        .filter(|value| !value.is_empty())
+        .or_else(|| std::env::var("HIPPO_SOURCE").ok())
+        .filter(|value| !value.is_empty())
+        // Pi before Cursor: a Cursor model inside Pi sets both.
+        .or_else(|| env_set("PI_CODING_AGENT").then(|| "pi".to_string()))
+        .or_else(|| env_set("CURSOR_AGENT").then(|| "cursor".to_string()))
+}
+
 fn home_from_config() -> Option<PathBuf> {
     let path = config_path();
     let text = std::fs::read_to_string(path).ok()?;

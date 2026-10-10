@@ -78,6 +78,24 @@ a person to resolve. Reindex never merges, because session start runs it.
 The keeper is the most-recalled member, else the most recently updated, else the
 lowest id. Absorbed files are deleted and their body is appended to the keeper.
 
+### Sync after writes
+
+When the data home is a git repo, `add`, `update`, and `consolidate --apply`
+commit the memory folder as "Record memory updates." and push it when the branch
+has an upstream. Writers hold `.index/write.lock`, so parallel agents queue. A
+failed commit or push does not undo the write: the command still exits `0` and
+adds `memory saved but not synced: <git error>` to `warnings`.
+
+`--source` defaults to `HIPPO_SOURCE`, then `pi` when `PI_CODING_AGENT` is set,
+then `cursor` when `CURSOR_AGENT` is set. Pi comes first because a Cursor model
+inside Pi sets both.
+
+### `hippo sync [--file PATH]`
+Reindexes changed files, then commits and pushes the same way. Emits
+`committed=BOOL pushed=BOOL`. With `--file`, a path outside `<home>/memory/` or
+not ending in `.md` prints `skipped: ...` and changes nothing. Adapters call this
+after an editor changes a memory file without the CLI. A git failure exits `1`.
+
 ### `hippo reindex [--all|--changed]`
 Emits `indexed=N added=N updated=N deleted=N`.
 
